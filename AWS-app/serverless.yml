@@ -1,0 +1,148 @@
+service: my-AWS-app
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-north-1
+  environment:
+    QUEUE_URL:
+      Ref: MyQueue
+    BUCKET_NAME:
+      Ref: MyBucket
+    USER_POOL_ID:
+      Ref: CognitoUserPool
+    CLIENT_ID:
+      Ref: CognitoUserPoolClient
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource:
+            Fn::GetAtt:
+              - MyQueue
+              - Arn
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource:
+            Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: MyBucket
+                - '/*'
+
+functions:
+  sendMessage:
+    handler: back-end/src/publisher.sendMessage
+    events:
+      - http:
+          path: send
+          method: post
+          cors: true
+      - http:
+          path: send
+          method: options
+          cors: true
+
+  upload:
+    handler: back-end/src/upload.handler
+    events:
+      - http:
+          path: upload
+          method: post
+          cors: true
+      - http:
+          path: upload
+          method: options
+          cors: true
+
+  signUp:
+    handler: back-end/src/signup.signUp
+    events:
+      - http:
+          path: signup
+          method: post
+          cors: true
+      - http:
+          path: signup
+          method: options
+          cors: true
+
+  login:
+    handler: back-end/src/login.login
+    events:
+      - http:
+          path: login
+          method: post
+          cors: true
+      - http:
+          path: login
+          method: options
+          cors: true
+  confirmEmail:
+    handler: back-end/src/confirmation.handler
+    events:
+        - http:
+            path: confirm
+            method: post
+            cors: true
+        - http:
+            path: confirm
+            method: options
+            cors: true
+
+resources:
+  Resources:
+    MyQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: my-queue-unique-20250614
+
+    MyBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: my-bucket-unique-20250614
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - HEAD
+              AllowedHeaders:
+                - '*'
+              MaxAge: 3000
+
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: my-auth-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: my-user-pool-client
+        GenerateSecret: false
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+          - USER_PASSWORD_AUTH

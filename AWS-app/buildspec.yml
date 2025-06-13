@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing Serverless...
+      - npm install --silent --no-progress -g npm
+      - npm install --silent --no-progress -g serverless
+
+  pre_build:
+    commands:
+      - echo Installing source npm dependencies...
+      - npm install --silent --no-progress
+
+  build:
+    commands:
+      - echo Running tests
+      - npm run test
+      - echo Deployment stated on `date` for stage $STAGE
+      - sls deploy -v --stage $STAGE
+
+  post_build:
+    commands:
+      - echo Deployment completed on this date `date`
