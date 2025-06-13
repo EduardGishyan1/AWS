@@ -15,8 +15,6 @@ function Message() {
         body: JSON.stringify({ message }),
       });
 
-      console.log(res)
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Failed to send message");
