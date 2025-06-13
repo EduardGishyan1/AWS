@@ -22,7 +22,7 @@
       "pre-commit": "npm run test"
     }
   },
-  "author": "Karlen Mkrtchyan",
+  "author": "Eduard Gishyan",
   "license": "MIT",
   "dependencies": {
     "18": "^0.0.0",
