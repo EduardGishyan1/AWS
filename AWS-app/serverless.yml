@@ -162,7 +162,7 @@ resources:
       Type: AWS::Cognito::UserPoolClient
       Properties:
         ClientName: my-user-pool-client
-        GenerateSecret: false  # Public client: no secret
+        GenerateSecret: false 
         UserPoolId:
           Ref: CognitoUserPool
         CallbackURLs:
