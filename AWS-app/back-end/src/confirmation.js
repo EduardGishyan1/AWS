@@ -5,6 +5,7 @@ const poolData = {
   UserPoolId: process.env.USER_POOL_ID,
   ClientId: process.env.CLIENT_ID,
 };
+
 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
 exports.handler = async (event) => {

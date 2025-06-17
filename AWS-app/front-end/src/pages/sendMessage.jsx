@@ -7,7 +7,7 @@ function Message() {
 
   const sendMessage = async () => {
     try {
-      const res = await fetch("https://hf34zxqkrl.execute-api.eu-north-1.amazonaws.com/dev/send", {
+      const res = await fetch("https://vk26fobb99.execute-api.eu-north-1.amazonaws.com/dev/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

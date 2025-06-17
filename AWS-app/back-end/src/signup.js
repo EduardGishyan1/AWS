@@ -56,10 +56,11 @@ exports.signUp = async (event) => {
             headers: {
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Headers': 'Content-Type',
-              'Access-Control-Allow-Methods': 'POST,GET, OPTIONS' },
+              'Access-Control-Allow-Methods': 'POST,GET, OPTIONS',
+            },
             body: JSON.stringify({ username: result.user.getUsername() }),
           });
-        },
+        }
       );
     });
   } catch (error) {
