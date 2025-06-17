@@ -1,0 +1,211 @@
+service: my-AWS-app
+frameworkVersion: '3'
+
+
+plugins: []
+
+custom:
+  callbackUrl: ${env:CALLBACK_URL}
+  logoutUrl: ${env:LOGOUT_URL}
+  originUrl: ${env:ORIGIN_URL}
+  googleClientId: ${env:GOOGLE_CLIENT_ID}
+  googleClientSecret: ${env:GOOGLE_CLIENT_SECRET}
+  CLIENT_ID: ${env:CLIENT_ID}
+  GOOGLE_REDIRECT_URI: ${env:GOOGLE_REDIRECT_URI}
+  COGNITO_DOMAIN: ${env:COGNITO_DOMAIN}
+
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-north-1
+  environment:
+    QUEUE_URL:
+      Ref: MyQueue
+    BUCKET_NAME:
+      Ref: MyBucket
+    USER_POOL_ID:
+      Ref: CognitoUserPool
+    CLIENT_ID: ${self:custom.CLIENT_ID}
+    googleClientId: ${self:custom.googleClientId}
+    googleClientSecret: ${self:custom.googleClientSecret}
+    GOOGLE_REDIRECT_URI: ${self:custom.GOOGLE_REDIRECT_URI}
+    COGNITO_DOMAIN: ${self:custom.COGNITO_DOMAIN}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource:
+            Fn::GetAtt:
+              - MyQueue
+              - Arn
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource:
+            Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: MyBucket
+                - '/*'
+
+functions:
+  sendMessage:
+    handler: back-end/src/publisher.sendMessage
+    events:
+      - http:
+          path: send
+          method: post
+          cors: true
+      - http:
+          path: send
+          method: options
+          cors: true
+
+  upload:
+    handler: back-end/src/upload.handler
+    events:
+      - http:
+          path: upload
+          method: post
+          cors: true
+      - http:
+          path: upload
+          method: options
+          cors: true
+
+  signUp:
+    handler: back-end/src/signup.signUp
+    events:
+      - http:
+          path: signup
+          method: post
+          cors: true
+      - http:
+          path: signup
+          method: options
+          cors: true
+
+  login:
+    handler: back-end/src/login.login
+    events:
+      - http:
+          path: login
+          method: post
+          cors: true
+      - http:
+          path: login
+          method: options
+          cors: true
+
+  confirmEmail:
+    handler: back-end/src/confirmation.handler
+    events:
+      - http:
+          path: confirm
+          method: post
+          cors: true
+      - http:
+          path: confirm
+          method: options
+          cors: true
+
+  googleAuth:
+    handler: back-end/src/googleAuth.handler
+    events:
+      - http:
+          path: google-auth
+          method: post
+          cors:
+            origin: ${self:custom.originUrl}
+            headers:
+              - Content-Type
+      - http:
+          path: google-auth
+          method: options
+          cors:
+            origin: ${self:custom.originUrl}
+            headers:
+              - Content-Type
+
+resources:
+  Resources:
+    MyQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: my-queue-unique-20250614
+
+    MyBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: my-bucket-unique-20250614
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - HEAD
+              AllowedHeaders:
+                - '*'
+              MaxAge: 3000
+
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: my-auth-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: my-user-pool-client
+        GenerateSecret: false
+        UserPoolId:
+          Ref: CognitoUserPool
+        CallbackURLs:
+          - ${self:custom.callbackUrl}
+        LogoutURLs:
+          - ${self:custom.originUrl}
+        AllowedOAuthFlows:
+          - code
+        AllowedOAuthScopes:
+          - email
+          - openid
+          - profile
+        AllowedOAuthFlowsUserPoolClient: true
+        SupportedIdentityProviders:
+          - COGNITO
+          - Google
+
+    GoogleIdentityProvider:
+      Type: AWS::Cognito::UserPoolIdentityProvider
+      Properties:
+        ProviderName: Google
+        ProviderType: Google
+        UserPoolId:
+          Ref: CognitoUserPool
+        ProviderDetails:
+          client_id: ${self:custom.googleClientId}
+          client_secret: ${self:custom.googleClientSecret}
+          authorize_scopes: profile email openid
+        AttributeMapping:
+          email: email
+          given_name: given_name
+          family_name: family_name
