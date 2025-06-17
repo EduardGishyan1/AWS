@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "./Callback.css"; // 👈 Import the CSS
+import "./Callback.css";
 
 const BACKEND_URL = "https://vk26fobb99.execute-api.eu-north-1.amazonaws.com/dev/google-auth";
 
